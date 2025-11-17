@@ -4,8 +4,8 @@ using static System.Text.Encoding;
 using static System.Console;
 
 // Constantes
-const int NumeroFilas = 6;
-const int NumeroColumnas = 8;
+const int NumeroFilas = 5;
+const int NumeroColumnas = 7;
 const string Libre = "🟢";
 const string Ocupada = "🔴";
 const string Averiada = "🚫";
@@ -21,14 +21,18 @@ var random = Random.Shared;
 // Inicio del Main
 OutputEncoding = UTF8;
 
-var bienvenida = "---- Bienvenido a Cines KOI ----";
-Estado[,] sala = new Estado[NumeroFilas, NumeroColumnas];
-CrearSala(sala);
-int entradasCompradas = 0;
-Menu(bienvenida, sala, ref entradasCompradas);
-WriteLine("Gracias por su visita!!!!");
+Main();
 
 return;
+
+void Main() {
+    var bienvenida = "---- Bienvenido a Cines KOI ----";
+    Estado[,] sala = new Estado[NumeroFilas, NumeroColumnas];
+    CrearSala(sala);
+    int entradasCompradas = 0;
+    Menu(bienvenida, sala, ref entradasCompradas);
+    WriteLine("Gracias por su visita!!!!");
+}
 // Fin del Main
 
 // Funciones y parámetros
@@ -101,13 +105,13 @@ void Opciones(int opcionElegida, Estado[,] sala, ref int entradasCompradas) {
 
 // Compramos una entrada
 void ComprarEntrada(Estado[,] sala, ref int entradasCompradas) {
-    var disponibles = EntradasDisponibles();
+    var disponibles = EntradasDisponibles(sala);
     WriteLine($"Quedan {disponibles} entradas disponibles");
 
-    bool cantidadOk = false;
+    bool cantidadOk;
     do {
-        WriteLine("Cuantas entradas quieres comprar???");
-        var regexCant = new Regex($@"^[1-{disponibles}]$");
+        WriteLine("Cuantas entradas quieres comprar (max. 5 Entradas)???");
+        var regexCant = new Regex(@"^[1-5]$");
         string inputCant = (ReadLine() ?? "").Trim();
         if (regexCant.IsMatch(inputCant)) {
             int cantidad = int.Parse(inputCant);
@@ -146,10 +150,10 @@ void ComprarEntrada(Estado[,] sala, ref int entradasCompradas) {
             cantidadOk = false;
         }
         else {
-            WriteLine("Llevas compradas no se puede comprar");
+            WriteLine("Cantidad incorrecta...");
             cantidadOk = true;
         }
-    } while (!cantidadOk);
+    } while (cantidadOk);
 
     DibujarSala(sala);
     double total = entradasCompradas * PrecioEntrada;
@@ -165,40 +169,50 @@ void DevolverEntrada(Estado[,] sala, ref int entradasCompradas) {
         WriteLine();
         return;
     }
-    WriteLine("Cuantas entradas quieres devolver???");
-    int cantidad = 0;
-    var regexCant = new Regex($@"^[1-{entradasCompradas}]$");
-    string inputCant = (ReadLine() ?? "").Trim();
-    if (regexCant.IsMatch(inputCant)) {
-        cantidad = int.Parse(inputCant);
-    }
-    int entradasDevueltas = cantidad;
+
+    bool cantidadOk;
+    int entradasDevueltas = 0;
     do {
-        WriteLine();
-        DibujarSala(sala);
-        WriteLine("Que butaca desea devolver??? nºFila:nºColumna");
-        var regexButaca = new Regex($"(^[1-{NumeroFilas}]):([1-{NumeroColumnas}])$");
-        var input = (ReadLine() ?? "").Trim();
-        Match match = regexButaca.Match(input);
-        string fila = match.Groups[1].Value;
-        string columna = match.Groups[2].Value;
-        int numFila = int.Parse(fila) - 1;
-        int numColumna = int.Parse(columna) - 1;
-        if (match.Success) {
-            if (sala[numFila, numColumna] == Estado.Ocupada) {
-                cantidad--;
-                entradasCompradas--;
-                sala[numFila, numColumna] = Estado.Libre;
-                Clear();
-            } else {
-                Clear();
-                WriteLine("La butaca introducida no se puede devolver, introduzca de nuevo...");
-            }
-        } else {
-            Clear();
-            WriteLine("La butaca introducida no se puede devolver, introduzca de nuevo..."); 
+        WriteLine("Cuantas entradas quieres devolver???");
+        var regexCant = new Regex($@"^[1-{entradasCompradas}]$");
+        string inputCant = (ReadLine() ?? "").Trim();
+        if (regexCant.IsMatch(inputCant)) {
+            int cantidad = int.Parse(inputCant);
+            entradasDevueltas = cantidad;
+            do {
+                WriteLine();
+                DibujarSala(sala);
+                WriteLine("Que butaca desea devolver??? nºFila:nºColumna");
+                var regexButaca = new Regex($"(^[1-{NumeroFilas}]):([1-{NumeroColumnas}])$");
+                var input = (ReadLine() ?? "").Trim();
+                Match match = regexButaca.Match(input);
+                string fila = match.Groups[1].Value;
+                string columna = match.Groups[2].Value;
+                int numFila = int.Parse(fila) - 1;
+                int numColumna = int.Parse(columna) - 1;
+                if (match.Success) {
+                    if (sala[numFila, numColumna] == Estado.Ocupada) {
+                        cantidad--;
+                        entradasCompradas--;
+                        sala[numFila, numColumna] = Estado.Libre;
+                        Clear();
+                    } else {
+                        Clear();
+                        WriteLine("La butaca introducida no se puede devolver, introduzca de nuevo...");
+                    }
+                } else {
+                    Clear();
+                    WriteLine("La butaca introducida no se puede devolver, introduzca de nuevo..."); 
+                }
+            } while (cantidad != 0);
+            cantidadOk = false;
         }
-    } while (cantidad != 0);
+        else {
+            WriteLine("Cantidad incorrecta...");
+            WriteLine($"Cantidad máxima para devolución: {entradasCompradas}");
+            cantidadOk = true;
+        }
+    } while (cantidadOk);
     
     DibujarSala(sala);
     double total = entradasDevueltas * PrecioEntrada;
@@ -213,9 +227,9 @@ void SacarInforme(Estado[,] sala, int entradasCompradas) {
     WriteLine();
     WriteLine("---- Informe de Venta Cines KOI ----");
     DibujarSala(sala);
-    int entradasDisponibles = EntradasDisponibles();
-    int entradasVendidas = EntradasVendidas();
-    int asientosAveriados = AsientosAveriados();
+    int entradasDisponibles = EntradasDisponibles(sala);
+    int entradasVendidas = EntradasVendidas(sala);
+    int asientosAveriados = AsientosAveriados(sala);
     int totalEntradas = entradasDisponibles + entradasVendidas + asientosAveriados;
     double ocupacion = (double)entradasVendidas/100 * (totalEntradas-asientosAveriados);
     double recaudación = entradasVendidas * PrecioEntrada;
@@ -223,7 +237,7 @@ void SacarInforme(Estado[,] sala, int entradasCompradas) {
     WriteLine($"Asientos disponibles: {entradasDisponibles}");
     WriteLine($"Asientos Fuera de Servicio: {asientosAveriados}");
     WriteLine($"Ocupación: {ocupacion}%");
-    WriteLine($"Recaudación: {recaudación}");
+    WriteLine($"Recaudación: {recaudación}€");
     WriteLine();
 }
 
@@ -260,7 +274,7 @@ void DibujarSala(Estado[,] sala) {
 }
 
 // Entradas disponibles
-int EntradasDisponibles() {
+int EntradasDisponibles(Estado[,] sala) {
     int entradas = 0;
     for (int i = 0; i < NumeroFilas; i++) {
         for (int j = 0; j < NumeroColumnas; j++) {
@@ -273,7 +287,7 @@ int EntradasDisponibles() {
 }
 
 // Entradas vendidas
-int EntradasVendidas() {
+int EntradasVendidas(Estado[,] sala) {
     int entradas = 0;
     for (int i = 0; i < NumeroFilas; i++) {
         for (int j = 0; j < NumeroColumnas; j++) {
@@ -286,7 +300,7 @@ int EntradasVendidas() {
 }
 
 // Entradas no disponibles por averia
-int AsientosAveriados() {
+int AsientosAveriados(Estado[,]  sala) {
     int entradas = 0;
     for (int i = 0; i < NumeroFilas; i++) {
         for (int j = 0; j < NumeroColumnas; j++) {
