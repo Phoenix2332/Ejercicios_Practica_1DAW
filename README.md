@@ -20,7 +20,7 @@ Precio fijo de 6,50€ la entrada
 Máximo de compra de entradas a la vez de 5
 ```
 
-## Prog-Parking (2025年-11月-日)
+## Prog-Parking (2025年-11月-18日)
 
 Se requiere gestionar la entrada y salida del parking de un instituto. Se requiere poder entrar y salir del parking si la matricula es reconocida, llevar un control de los Profesores y vehículos de los mismos.
 ```
